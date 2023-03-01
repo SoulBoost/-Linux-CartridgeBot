@@ -3,6 +3,6 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage #хранит да�
 
 storage = MemoryStorage()
 
-bot = Bot(token='6260963136:AAFJwoXxG_C5jbM2NJaSyugAi7AS4yaTeMg')
-CHANNEL_ID = 6260963136
+bot = Bot(token='5655353500:AAHeMfLZ_cLwKJU8kPFjn9dn-y5loWAWZXw', parse_mode="HTML")
+CHANNEL_ID = '-1001762333718'
 dp = Dispatcher(bot, storage=storage)

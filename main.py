@@ -19,9 +19,9 @@ from aiogram.utils import executor  # сам запуск
 from create_bot import dp
 from database import sqlite_db
 
+print('подключение к бд...')
 
 async def on_startup(_):
-    print('подключение к бд...')
     sqlite_db.sql_start()
 
 

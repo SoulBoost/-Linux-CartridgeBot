@@ -1,5 +1,5 @@
 import sqlite3 as sq
-from create_bot import bot
+from create_bot import bot, CHANNEL_ID
 
 ''' base - название БД
     cur - встройка, выборка из БД
@@ -15,14 +15,19 @@ def sql_start():
     cur = base.cursor()
     if base:
         print("Успешно подключено")
-    base.execute('CREATE TABLE IF NOT EXISTS cartridge(name TEXT , count INT)')
+    base.execute('CREATE TABLE IF NOT EXISTS cartridge(name TEXT(14) , count INT (5))')
     base.commit()
 
 
 async def sql_add_command(state):
     async with state.proxy() as data:
-        cur.execute('INSERT INTO cartridge VALUES (?, ?)', tuple(data.values()))
-        base.commit()
+        try:
+            cur.execute('INSERT INTO cartridge VALUES (?, ?)', tuple(data.values()))
+            base.commit()
+
+        except:
+            print('Error')
+            base.commit()
 
 
 async def sql_read(message):
@@ -30,6 +35,13 @@ async def sql_read(message):
     for ret in cur.execute("SELECT * FROM cartridge"):
         result += f"\n{ret[0]} - {ret[1]} шт."
     await bot.send_message(message.from_user.id, result)
+
+
+async def sql_read_group(message):
+    result = "Наименование - Количество:"
+    for ret in cur.execute("SELECT * FROM cartridge"):
+        result += f"\n{ret[0]} - {ret[1]} шт."
+    await bot.send_message(CHANNEL_ID, result)
 
 
 async def sql_take(state):
