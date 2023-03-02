@@ -7,6 +7,7 @@ from aiogram import types, Dispatcher
 from aiogram.dispatcher.filters import Text
 from database import sqlite_db
 from keyboards import kb_client, kb_exit, kb
+from aiogram.utils import exceptions
 
 
 # exit
@@ -36,7 +37,8 @@ async def getname(message: types.Message, state: FSMContext):
     await sqlite_db.sql_take(state)
     await bot.send_message(message.from_user.id, f'Вы взяли один картридж  - {data["nameTake"]}',
                            reply_markup=kb_client)
-    await bot.send_message(CHANNEL_ID, f'{message.from_user.full_name} взял картридж {data["nameTake"]}', reply_markup=kb)
+    await bot.send_message(CHANNEL_ID, f'{message.from_user.full_name} взял картридж {data["nameTake"]}',
+                           reply_markup=kb)
     await state.finish()
 
 
@@ -82,12 +84,20 @@ async def name(message: types.Message, state: FSMContext):
 # 2 ответ
 async def count(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        data['count'] = int(message.text)
+        try:
+            data['count'] = int(message.text)
+            if data['count'] > 100:
+                await message.reply('Большое количество, введите повторно: ')
+                return cm_start()
+            await bot.send_message(message.from_user.id, 'Добавлено', reply_markup=kb_client)
+            await bot.send_message(CHANNEL_ID,
+                                   f'{message.from_user.full_name} создал новую позицию {data["name"]} с количеством {data["count"]}',
+                                   reply_markup=kb)
 
+        except ValueError:
+            await message.reply('Только числовое значение', reply_markup=kb_exit)
+            return cm_start
     await sqlite_db.sql_add_command(state)
-    await bot.send_message(message.from_user.id, 'Добавлено', reply_markup=kb_client)
-    await bot.send_message(CHANNEL_ID, f'{message.from_user.full_name} создал новую позицию {data["name"]} с количеством {data["count"]}' ,
-                           reply_markup=kb)
     await state.finish()
 
 

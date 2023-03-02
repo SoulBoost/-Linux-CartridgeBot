@@ -24,33 +24,31 @@ async def sql_add_command(state):
         try:
             cur.execute('INSERT INTO cartridge VALUES (?, ?)', tuple(data.values()))
             base.commit()
+        except OverflowError:
+            print('Биг колво')
 
-        except:
-            print('Error')
-            base.commit()
-
-
+# список картриджей для пользователя
 async def sql_read(message):
     result = "Наименование - Количество:"
     for ret in cur.execute("SELECT * FROM cartridge"):
         result += f"\n{ret[0]} - {ret[1]} шт."
     await bot.send_message(message.from_user.id, result)
 
-
+# список картриджей для группы
 async def sql_read_group(message):
     result = "Наименование - Количество:"
     for ret in cur.execute("SELECT * FROM cartridge"):
         result += f"\n{ret[0]} - {ret[1]} шт."
     await bot.send_message(CHANNEL_ID, result)
 
-
+# действие, когда берется картридж
 async def sql_take(state):
     async with state.proxy() as data:
         cur.execute(f'UPDATE cartridge SET count = count - 1 WHERE name LIKE "%{data["nameTake"]}%"')
         base.commit()
 
-
-async def sql_put(state):
+# вернули картридж
+async def sql_put(state, p):
     async with state.proxy() as data:
         cur.execute(f'UPDATE cartridge SET count = count + 1 WHERE name LIKE "%{data["namePut"]}%"')
         base.commit()
