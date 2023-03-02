@@ -1,5 +1,6 @@
 from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage #хранит данные в ОЗУ локалки
+# добавление from settings import TOKEN, CHANNEL_ID
 # -1001690773499
 storage = MemoryStorage()
 
