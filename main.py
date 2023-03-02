@@ -13,6 +13,8 @@
 
 Добавление триггеров при низком количестве картриджей (желательно также в группу)
 
+Docker, vps https://www.youtube.com/watch?v=Kh16iosOTIQ
+lambda
 """
 
 from aiogram.utils import executor  # сам запуск
