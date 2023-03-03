@@ -1,11 +1,10 @@
 @echo off
 
 call %~dp0\venv\Scripts\activate
-
-
-set TOKEN =6260963136:AAFJwoXxG_C5jbM2NJaSyugAi7AS4yaTeMg
-
 cd %~dp0
+set TOKEN=5655353500:AAHeMfLZ_cLwKJU8kPFjn9dn-y5loWAWZXw
+set CHANNEL_ID=-1001762333718
+
 
 python main.py
 

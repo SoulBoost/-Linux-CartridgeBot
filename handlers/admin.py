@@ -1,5 +1,3 @@
-from typing import Text
-
 from create_bot import dp, bot, CHANNEL_ID
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
@@ -7,7 +5,6 @@ from aiogram import types, Dispatcher
 from aiogram.dispatcher.filters import Text
 from database import sqlite_db
 from keyboards import kb_client, kb_exit, kb
-from aiogram.utils import exceptions
 
 
 # exit
@@ -45,6 +42,7 @@ async def getname(message: types.Message, state: FSMContext):
 # Вернуть картридж
 class PutCart(StatesGroup):
     namePut = State()
+    countPut = State()
 
 
 async def put_start(message: types.Message):
@@ -55,9 +53,16 @@ async def put_start(message: types.Message):
 async def getputname(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['namePut'] = message.text
-    await sqlite_db.sql_put(state)
+    await FSMAdmin.next()
+    await message.reply("Количество", reply_markup=kb_exit)
+
+
+async def count_put(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        await sqlite_db.sql_put(state)
     await bot.send_message(message.from_user.id, f'Вы положили картридж - {data["namePut"]}', reply_markup=kb_client)
-    await bot.send_message(CHANNEL_ID, f'{message.from_user.full_name} положил картридж {data["namePut"]}',
+    await bot.send_message(CHANNEL_ID,
+                           f'{message.from_user.full_name} положил картридж {data["namePut"]} в количестве - {data["countPut"]} шт.',
                            reply_markup=kb)
     await state.finish()
 
@@ -86,9 +91,9 @@ async def count(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         try:
             data['count'] = int(message.text)
-            if data['count'] > 100:
-                await message.reply('Большое количество, введите повторно: ')
-                return cm_start()
+            if (data['count'] > 100) or (data['count'] < 0):
+                await message.reply('Неверное количество, введите повторно: ')
+                return
             await bot.send_message(message.from_user.id, 'Добавлено', reply_markup=kb_client)
             await bot.send_message(CHANNEL_ID,
                                    f'{message.from_user.full_name} создал новую позицию {data["name"]} с количеством {data["count"]}',
@@ -96,8 +101,8 @@ async def count(message: types.Message, state: FSMContext):
 
         except ValueError:
             await message.reply('Только числовое значение', reply_markup=kb_exit)
-            return cm_start
-    await sqlite_db.sql_add_command(state)
+            return
+    await sqlite_db.sql_add_command(state, message)
     await state.finish()
 
 
