@@ -58,8 +58,10 @@ async def sql_take(state, message):
                     await bot.send_message(message.from_user.id, f'Вы взяли картридж: <b>{ret[0]}</b>\nТекущее количество: <b>{ret[1]}</b>', parse_mode=types.ParseMode.HTML)
                     cur.execute(f'UPDATE cartridge SET count = count - 1 WHERE name LIKE "%{data["nameTake"]}%"')
                 else:
+                    result = ""
                     for a in cur.execute(f'SELECT * FROM cartridge WHERE name LIKE "%{data["nameTake"]}%" '):
-                        await bot.send_message(message.from_user.id, f'Ошибка: имеется несколько картриджей с похожим названием: {a[0]}') #сделать инлайн кнопку
+                        result += f'{a[0]}\n'
+                    await bot.send_message(message.from_user.id, f'{result}') #сделать инлайн кнопку
         base.commit()
 
 
