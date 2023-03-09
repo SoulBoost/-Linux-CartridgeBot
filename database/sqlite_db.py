@@ -50,13 +50,13 @@ async def sql_read_group(message):
     await bot.send_message(CHANNEL_ID, result, parse_mode=types.ParseMode.HTML)
 
 # действие, когда берется картридж
-async def sql_take(state):
+async def sql_take(state, message):
     async with state.proxy() as data:
-        for ret in cur.execute(f'SELECT cartridge WHERE name LIKE "%{data["nameTake"]}"'):
-            print(ret)
+        for ret in cur.execute(f'SELECT * FROM cartridge WHERE name LIKE "%{data["nameTake"]}%" '):
+            await bot.send_message(message.from_user.id, f'Вы взяли картридж {ret[0]}')
         cur.execute(f'UPDATE cartridge SET count = count - 1 WHERE name LIKE "%{data["nameTake"]}%"')
-        base.commit()
 
+        base.commit()
 # вернули картридж
 async def sql_put(state, p):
     async with state.proxy() as data:

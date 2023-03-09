@@ -31,11 +31,11 @@ async def take_start(message: types.Message):
 async def getname(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['nameTake'] = message.text
-    await sqlite_db.sql_take(state)
-    await bot.send_message(message.from_user.id, f'Вы взяли один картридж  - {data["nameTake"]}',
-                           reply_markup=kb_client)
-    await bot.send_message(CHANNEL_ID, f'{message.from_user.full_name} взял картридж {data["nameTake"]}',
-                           reply_markup=kb)
+    await sqlite_db.sql_take(state, message)
+    # await bot.send_message(message.from_user.id, f'Вы взяли один картридж  - {data["nameTake"]}',
+    #                        reply_markup=kb_client)
+    # await bot.send_message(CHANNEL_ID, f'{message.from_user.full_name} взял картридж {data["nameTake"]}',
+    #                    l    reply_markup=kb)
     await state.finish()
 
 
