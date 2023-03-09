@@ -53,12 +53,18 @@ async def sql_read_group(message):
 async def sql_take(state, message):
     async with state.proxy() as data:
         for ret in cur.execute(f'SELECT * FROM cartridge WHERE name LIKE "%{data["nameTake"]}%" '):
-            await bot.send_message(message.from_user.id, f'Вы взяли картридж {ret[0]}')
-        cur.execute(f'UPDATE cartridge SET count = count - 1 WHERE name LIKE "%{data["nameTake"]}%"')
-
+            for cartcount in cur.execute(f'SELECT COUNT(*) FROM cartridge WHERE name LIKE "%{data["nameTake"]}%"'):
+                if cartcount[0] < 2:
+                    await bot.send_message(message.from_user.id, f'Вы взяли картридж: <b>{ret[0]}</b>\nТекущее количество: <b>{ret[1]}</b>', parse_mode=types.ParseMode.HTML)
+                    cur.execute(f'UPDATE cartridge SET count = count - 1 WHERE name LIKE "%{data["nameTake"]}%"')
+                else:
+                    for a in cur.execute(f'SELECT * FROM cartridge WHERE name LIKE "%{data["nameTake"]}%" '):
+                        await bot.send_message(message.from_user.id, f'Ошибка: имеется несколько картриджей с похожим названием: {a[0]}') #сделать инлайн кнопку
         base.commit()
+
+
 # вернули картридж
-async def sql_put(state, p):
+async def sql_put(state):
     async with state.proxy() as data:
         cur.execute(f'UPDATE cartridge SET count = "{data["countPut"]}" WHERE name LIKE "%{data["namePut"]}%"')
         base.commit()
