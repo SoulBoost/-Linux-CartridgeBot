@@ -24,6 +24,7 @@ from database import sqlite_db
 
 print('подключение к бд...')
 
+
 async def on_startup(_):
     sqlite_db.sql_start()
 

@@ -1,0 +1,532 @@
+Index: bot.bat
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>@echo off\r\n\r\ncall %~dp0\\venv\\Scripts\\activate\r\ncd %~dp0\r\nset TOKEN=5655353500:AAHeMfLZ_cLwKJU8kPFjn9dn-y5loWAWZXw\r\nset CHANNEL_ID=-1001762333718\r\n\r\n\r\npython main.py\r\n\r\npause
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/bot.bat b/bot.bat
+--- a/bot.bat	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
++++ b/bot.bat	(date 1678403389174)
+@@ -1,9 +1,9 @@
+ @echo off
+ 
+ call %~dp0\venv\Scripts\activate
+-cd %~dp0
++cd %~dp0\pybot
+ set TOKEN=5655353500:AAHeMfLZ_cLwKJU8kPFjn9dn-y5loWAWZXw
+-set CHANNEL_ID=-1001762333718
++set CHANNEL_ID=-1001690773499
+ 
+ 
+ python main.py
+Index: handlers/admin.py
+===================================================================
+diff --git a/handlers/admin.py b/handlers/admin.py
+deleted file mode 100644
+--- a/handlers/admin.py	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
++++ /dev/null	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
+@@ -1,119 +0,0 @@
+-from create_bot import dp, bot, CHANNEL_ID
+-from aiogram.dispatcher import FSMContext
+-from aiogram.dispatcher.filters.state import State, StatesGroup
+-from aiogram import types, Dispatcher
+-from aiogram.dispatcher.filters import Text
+-from database import sqlite_db
+-from keyboards import kb_client, kb_exit, kb
+-
+-
+-# exit
+-@dp.message_handler(state="*", commands='exit')
+-@dp.message_handler(Text(equals='exit', ignore_case=True), state="*")
+-async def cancel(message: types.Message, state: FSMContext):
+-    current_state = await state.get_state()
+-    if current_state is None:
+-        return
+-    await state.finish()
+-    await message.reply('OK', reply_markup=kb_client)
+-
+-
+-class TakeCart(StatesGroup):
+-    nameTake = State()
+-
+-
+-#
+-async def take_start(message: types.Message):
+-    await TakeCart.nameTake.set()
+-    await message.reply("Укажите номер картриджа: ", reply_markup=kb_exit)
+-
+-
+-async def getname(message: types.Message, state: FSMContext):
+-    async with state.proxy() as data:
+-        data['nameTake'] = message.text
+-    await sqlite_db.sql_take(state)
+-    await bot.send_message(message.from_user.id, f'Вы взяли один картридж  - {data["nameTake"]}',
+-                           reply_markup=kb_client)
+-    await bot.send_message(CHANNEL_ID, f'{message.from_user.full_name} взял картридж {data["nameTake"]}',
+-                           reply_markup=kb)
+-    await state.finish()
+-
+-
+-# Вернуть картридж
+-class PutCart(StatesGroup):
+-    namePut = State()
+-    countPut = State()
+-
+-
+-async def put_start(message: types.Message):
+-    await PutCart.namePut.set()
+-    await message.reply("Укажите номер картриджа: ", reply_markup=kb_exit)
+-
+-
+-async def getputname(message: types.Message, state: FSMContext):
+-    async with state.proxy() as data:
+-        data['namePut'] = message.text
+-    await FSMAdmin.next()
+-    await message.reply("Количество", reply_markup=kb_exit)
+-
+-
+-async def count_put(message: types.Message, state: FSMContext):
+-    async with state.proxy() as data:
+-        await sqlite_db.sql_put(state)
+-    await bot.send_message(message.from_user.id, f'Вы положили картридж - {data["namePut"]}', reply_markup=kb_client)
+-    await bot.send_message(CHANNEL_ID,
+-                           f'{message.from_user.full_name} положил картридж {data["namePut"]} в количестве - {data["countPut"]} шт.',
+-                           reply_markup=kb)
+-    await state.finish()
+-
+-
+-# Добавление нового картриджа
+-class FSMAdmin(StatesGroup):
+-    name = State()
+-    count = State()
+-
+-
+-async def cm_start(message: types.Message):
+-    await FSMAdmin.name.set()
+-    await message.reply('Введите название:', reply_markup=kb_exit)
+-
+-
+-# Ответ от пользователя
+-async def name(message: types.Message, state: FSMContext):
+-    async with state.proxy() as data:
+-        data['name'] = message.text
+-    await FSMAdmin.next()
+-    await message.reply("Количество на данный момент", reply_markup=kb_exit)
+-
+-
+-# 2 ответ
+-async def count(message: types.Message, state: FSMContext):
+-    async with state.proxy() as data:
+-        try:
+-            data['count'] = int(message.text)
+-            if (data['count'] > 100) or (data['count'] < 0):
+-                await message.reply('Неверное количество, введите повторно: ')
+-                return
+-            await bot.send_message(message.from_user.id, 'Добавлено', reply_markup=kb_client)
+-            await bot.send_message(CHANNEL_ID,
+-                                   f'{message.from_user.full_name} создал новую позицию {data["name"]} с количеством {data["count"]}',
+-                                   reply_markup=kb)
+-
+-        except ValueError:
+-            await message.reply('Только числовое значение', reply_markup=kb_exit)
+-            return
+-    await sqlite_db.sql_add_command(state, message)
+-    await state.finish()
+-
+-
+-# Регистрация хендлеров
+-def register_handlers_admin(dp: Dispatcher):
+-    dp.register_message_handler(cm_start, text='Добавить новый', state=None)
+-    dp.register_message_handler(name, state=FSMAdmin.name)
+-    dp.register_message_handler(count, state=FSMAdmin.count)
+-
+-    dp.register_message_handler(take_start, text='Взять', state=None)
+-    dp.register_message_handler(getname, state=TakeCart.nameTake)
+-
+-    dp.register_message_handler(put_start, text='Положить', state=None)
+-    dp.register_message_handler(getputname, state=PutCart.namePut)
+Index: keyboards/__init__.py
+===================================================================
+diff --git a/keyboards/__init__.py b/keyboards/__init__.py
+deleted file mode 100644
+--- a/keyboards/__init__.py	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
++++ /dev/null	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
+@@ -1,2 +0,0 @@
+-#для формирования пакета импорта
+-from keyboards.client_kb import kb_client, kb_exit, kb
+\ No newline at end of file
+Index: handlers/client.py
+===================================================================
+diff --git a/handlers/client.py b/handlers/client.py
+deleted file mode 100644
+--- a/handlers/client.py	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
++++ /dev/null	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
+@@ -1,44 +0,0 @@
+-from aiogram import types
+-
+-from create_bot import bot, Dispatcher, CHANNEL_ID
+-from keyboards import kb_client
+-from database import sqlite_db
+-
+-
+-# start help
+-async def command_start(message: types.Message):
+-     try:
+-        await bot.send_message(message.from_user.id, 'Author by vignatenko@rolf.ru\nВсе запросы направлять сюда.', reply_markup=kb_client)
+-        await message.delete()
+-     except:
+-         await message.answer(f'{message.from_user.full_name}, для работы с ботом необходимо перейти ')
+-
+-
+-
+-async def cart_list(message: types.Message):
+-    await sqlite_db.sql_read(message)
+-
+-
+-async def reset(message: types.message):
+-    if message.text == "сброс":
+-        await bot.send_message(message.from_user.id, 'Выполнен сброс параметров. /start', reply_markup=kb_client)
+-        await message.delete()
+-
+-
+-async def stop(message: types.message):
+-    await message.answer('Выполнен сброс сессии, для начала введите - /start', reply_markup=types.ReplyKeyboardRemove())
+-    await message.delete()
+-
+-
+-async def CartList(message: types.Message):
+-    await sqlite_db.sql_read_group(message)
+-
+-
+-def register_handler_client(dp: Dispatcher):
+-    dp.register_message_handler(command_start, commands=['start', 'help'])
+-    dp.register_message_handler(cart_list, text='Список картриджей')
+-    dp.register_message_handler(reset, text="сброс")
+-
+-    dp.register_message_handler(stop, commands=['stop'])
+-
+-    dp.register_callback_query_handler(CartList, text='CartList')
+\ No newline at end of file
+Index: .idea/encodings.xml
+===================================================================
+diff --git a/.idea/encodings.xml b/.idea/encodings.xml
+deleted file mode 100644
+--- a/.idea/encodings.xml	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
++++ /dev/null	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
+@@ -1,6 +0,0 @@
+-<?xml version="1.0" encoding="UTF-8"?>
+-<project version="4">
+-  <component name="Encoding">
+-    <file url="file://$PROJECT_DIR$/printcartridge.db" charset="windows-1251" />
+-  </component>
+-</project>
+\ No newline at end of file
+Index: main.py
+===================================================================
+diff --git a/main.py b/main.py
+deleted file mode 100644
+--- a/main.py	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
++++ /dev/null	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
+@@ -1,36 +0,0 @@
+-"""
+-Есть два варианта выбора.
+-1 - пользователь выбирает номер картриджа, далее выбирает что с ним делать - лучше так. Так как при пополнении огромных запасов, проще будет много раз + прожать.
+-2  - сначала действие, потом картридж.
+-
+-
+-Уведомление о том, что взяли, положили - приходит в общую группу. +
+-    Пример: [Был взят картирдж cf410x - 1 штука] - Вывести весь список картриджей
+-
+-Сделать проверку при добавлении нового картриджа 0.5
+-Возможность редактировать каждый картридж отдельно
+-Название кнопок +
+-Проверка при "Взять" и "Положить".
+-
+-Добавление триггеров при низком количестве картриджей (желательно также в группу)
+-
+-Docker, vps https://www.youtube.com/watch?v=Kh16iosOTIQ
+-lambda
+-"""
+-
+-from aiogram.utils import executor  # сам запуск
+-from create_bot import dp
+-from database import sqlite_db
+-
+-print('подключение к бд...')
+-
+-async def on_startup(_):
+-    sqlite_db.sql_start()
+-
+-
+-from handlers import admin, client
+-
+-client.register_handler_client(dp)
+-admin.register_handlers_admin(dp)
+-
+-executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
+Index: .idea/.gitignore
+===================================================================
+diff --git a/.idea/.gitignore b/.idea/.gitignore
+deleted file mode 100644
+--- a/.idea/.gitignore	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
++++ /dev/null	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
+@@ -1,3 +0,0 @@
+-# Default ignored files
+-/shelf/
+-/workspace.xml
+Index: database/__init__.py
+===================================================================
+diff --git a/database/__init__.py b/database/__init__.py
+deleted file mode 100644
+--- a/database/__init__.py	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
++++ /dev/null	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
+@@ -1,1 +0,0 @@
+-from database import sqlite_db
+Index: .idea/modules.xml
+===================================================================
+diff --git a/.idea/modules.xml b/.idea/modules.xml
+deleted file mode 100644
+--- a/.idea/modules.xml	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
++++ /dev/null	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
+@@ -1,8 +0,0 @@
+-<?xml version="1.0" encoding="UTF-8"?>
+-<project version="4">
+-  <component name="ProjectModuleManager">
+-    <modules>
+-      <module fileurl="file://$PROJECT_DIR$/.idea/pyTelebot (aiogram).iml" filepath="$PROJECT_DIR$/.idea/pyTelebot (aiogram).iml" />
+-    </modules>
+-  </component>
+-</project>
+\ No newline at end of file
+Index: README.md
+===================================================================
+diff --git a/README.md b/README.md
+deleted file mode 100644
+--- a/README.md	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
++++ /dev/null	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
+@@ -1,1 +0,0 @@
+-# pybot
+Index: create_bot.py
+===================================================================
+diff --git a/create_bot.py b/create_bot.py
+deleted file mode 100644
+--- a/create_bot.py	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
++++ /dev/null	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
+@@ -1,13 +0,0 @@
+-from aiogram import Bot, Dispatcher
+-from aiogram.contrib.fsm_storage.memory import MemoryStorage #хранит данные в ОЗУ локалки
+-
+-import os
+-# добавление from settings import TOKEN, CHANNEL_ID
+-# -1001690773499
+-storage = MemoryStorage()
+-
+-bot = Bot(token=os.getenv('TOKEN'))
+-CHANNEL_ID = os.getenv('CHANNEL_ID')
+-dp = Dispatcher(bot, storage=storage)
+-print(bot)
+-print(CHANNEL_ID)
+\ No newline at end of file
+Index: handlers/__init__.py
+===================================================================
+diff --git a/handlers/__init__.py b/handlers/__init__.py
+deleted file mode 100644
+--- a/handlers/__init__.py	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
++++ /dev/null	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
+@@ -1,3 +0,0 @@
+-from handlers import client
+-from handlers import admin
+-from handlers import other
+Index: handlers/other.py
+===================================================================
+diff --git a/handlers/other.py b/handlers/other.py
+deleted file mode 100644
+--- a/handlers/other.py	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
++++ /dev/null	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
+@@ -1,1 +0,0 @@
+-
+Index: keyboards/client_kb.py
+===================================================================
+diff --git a/keyboards/client_kb.py b/keyboards/client_kb.py
+deleted file mode 100644
+--- a/keyboards/client_kb.py	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
++++ /dev/null	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
+@@ -1,19 +0,0 @@
+-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove, InlineKeyboardButton, InlineKeyboardMarkup
+-
+-b1 = KeyboardButton('Список картриджей')
+-b2 = KeyboardButton('Взять')
+-b4 = KeyboardButton('Положить')
+-b3 = KeyboardButton('Добавить новый')
+-
+-kb_client = ReplyKeyboardMarkup(resize_keyboard=True)
+-kb_client.add(b1).add(b2).insert(b4).add(b3)
+-
+-
+-b5 = KeyboardButton('exit')
+-kb_exit = ReplyKeyboardMarkup(resize_keyboard=True)
+-kb_exit.add(b5)
+-
+-#Кнопки
+-kb = InlineKeyboardMarkup(row_width=2)
+-inline_kb = InlineKeyboardButton(text="Список картриджей", callback_data='CartList')
+-kb.add(inline_kb)
+Index: database/sqlite_db.py
+===================================================================
+diff --git a/database/sqlite_db.py b/database/sqlite_db.py
+deleted file mode 100644
+--- a/database/sqlite_db.py	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
++++ /dev/null	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
+@@ -1,64 +0,0 @@
+-import sqlite3 as sq
+-from create_bot import bot, CHANNEL_ID
+-from aiogram import types
+-
+-''' base - название БД
+-    cur - встройка, выборка из БД
+-  '''
+-
+-
+-# создание/подключение БД
+-
+-
+-def sql_start():
+-    global base, cur
+-    base = sq.connect('printcartridge.db')
+-    cur = base.cursor()
+-    if base:
+-        print("Успешно подключено")
+-    # base.execute('CREATE TABLE IF NOT EXISTS cartridge(name TEXT(14) , count INT (5))')
+-    # base.commit()
+-
+-
+-async def sql_add_command(state, message):
+-    async with state.proxy() as data:
+-        try:
+-            cur.execute(f'SELECT * FROM cartridge WHERE name = "{data["name"]}"')
+-            cart = cur.fetchone()
+-            if cart is None:
+-                cur.execute('INSERT INTO cartridge VALUES (?, ?)', tuple(data.values()))
+-                base.commit()
+-            else:
+-                await message.reply('Данный картридж уже занесен в базу данных. Проверьте правильность введенных '
+-                                    'данных.')
+-        except OverflowError:
+-            print('OVERFLOW ERROR')
+-
+-
+-# список картриджей для пользователя
+-async def sql_read(message):
+-    result = "Наименование - Количество:"
+-    for ret in cur.execute("SELECT * FROM cartridge"):
+-        result += f"\n{ret[0]} - {ret[1]} шт."
+-    await bot.send_message(message.from_user.id, result)
+-
+-# список картриджей для группы
+-async def sql_read_group(message):
+-    result = "Наименование - Количество:"
+-    for ret in cur.execute("SELECT * FROM cartridge"):
+-        result += f"\n{ret[0]} - <u>{ret[1]}</u> <u>шт.</u>"
+-    await bot.send_message(CHANNEL_ID, result, parse_mode=types.ParseMode.HTML)
+-
+-# действие, когда берется картридж
+-async def sql_take(state):
+-    async with state.proxy() as data:
+-        for ret in cur.execute(f'SELECT cartridge WHERE name LIKE "%{data["nameTake"]}"'):
+-            print(ret)
+-        cur.execute(f'UPDATE cartridge SET count = count - 1 WHERE name LIKE "%{data["nameTake"]}%"')
+-        base.commit()
+-
+-# вернули картридж
+-async def sql_put(state, p):
+-    async with state.proxy() as data:
+-        cur.execute(f'UPDATE cartridge SET count = "{data["countPut"]}" WHERE name LIKE "%{data["namePut"]}%"')
+-        base.commit()
+Index: printcartridge.db
+===================================================================
+diff --git a/printcartridge.db b/printcartridge.db
+deleted file mode 100644
+--- a/printcartridge.db	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
++++ /dev/null	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
+@@ -1,22 +0,0 @@
+-SQLite format 3   @     j            	                                                 j .[4
+-> � ��                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      V}tablecartridgecartridgeCREATE TABLE cartridge (name TEXT (15), count INT (103))   �;;tablesqlitestudio_temp_tablesqlitestudio_temp_tableCREATE TABLE sqlitestudio_temp_table(name TEXT,count INT)   MgtablecartridgecartridgeCREATE TABLE cartridge (name TEXT, co     
+-   � ����������xk^SH=0#�����                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          )11222222222222222222222222222222222
+-   Kd23dd12d13dd1d1d12d1d11ddd12d12d21
+-   #	sxs   	auf	еtest
+-Cf401aCf402a Cf400x 		W2031a		W2032a		W2033a
+-Cf403a Cf412a 	Cf411a 
+-
+-Cf412a
+-	Cf287x!106R03585 Cf226x 
+-Tk1160255x280x
+-W2030a CF259x 
+-CF237y
+-        ����������xk^SH=0#��                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            	sxs	[	]];;�
+-Cf401aCf402a Cf400x 		W2031a		W2032a		W2033a
+-Cf403a Cf412a 	Cf411a 
+-
+-Cf412a
+-	Cf287x!106R03585 Cf226x 
+-Tk1160255x280x
+-W2030a CF259x 
+-CF237y
+Index: .idea/pyTelebot (aiogram).iml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<module type=\"PYTHON_MODULE\" version=\"4\">\r\n  <component name=\"NewModuleRootManager\">\r\n    <content url=\"file://$MODULE_DIR$\">\r\n      <excludeFolder url=\"file://$MODULE_DIR$/venv\" />\r\n    </content>\r\n    <orderEntry type=\"inheritedJdk\" />\r\n    <orderEntry type=\"sourceFolder\" forTests=\"false\" />\r\n  </component>\r\n</module>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/pyTelebot (aiogram).iml b/.idea/pyTelebot (aiogram).iml
+--- a/.idea/pyTelebot (aiogram).iml	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
++++ b/.idea/pyTelebot (aiogram).iml	(date 1678041943825)
+@@ -4,7 +4,7 @@
+     <content url="file://$MODULE_DIR$">
+       <excludeFolder url="file://$MODULE_DIR$/venv" />
+     </content>
+-    <orderEntry type="inheritedJdk" />
++    <orderEntry type="jdk" jdkName="Python 3.11 (pybot(optim))" jdkType="Python SDK" />
+     <orderEntry type="sourceFolder" forTests="false" />
+   </component>
+ </module>
+\ No newline at end of file
+Index: .idea/misc.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"ProjectRootManager\" version=\"2\" project-jdk-name=\"Python 3.11 (pyTelebot)\" project-jdk-type=\"Python SDK\" />\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/misc.xml b/.idea/misc.xml
+--- a/.idea/misc.xml	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
++++ b/.idea/misc.xml	(date 1678041943872)
+@@ -1,4 +1,4 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <project version="4">
+-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.11 (pyTelebot)" project-jdk-type="Python SDK" />
++  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.11 (pybot(optim))" project-jdk-type="Python SDK" />
+ </project>
+\ No newline at end of file
+Index: .idea/vcs.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"VcsDirectoryMappings\">\r\n    <mapping directory=\"$PROJECT_DIR$\" vcs=\"Git\" />\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/vcs.xml b/.idea/vcs.xml
+--- a/.idea/vcs.xml	(revision d67451e4e7da3f453c34f30d8fd82c3cdb449589)
++++ b/.idea/vcs.xml	(date 1678118779691)
+@@ -1,6 +1,6 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <project version="4">
+   <component name="VcsDirectoryMappings">
+-    <mapping directory="$PROJECT_DIR$" vcs="Git" />
++    <mapping directory="" vcs="Git" />
+   </component>
+ </project>
+\ No newline at end of file
+diff --git a/bat.txt b/bat.txt
+deleted file mode 100644

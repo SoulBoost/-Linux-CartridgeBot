@@ -11,8 +11,8 @@ async def command_start(message: types.Message):
         await bot.send_message(message.from_user.id, 'Author by vignatenko@rolf.ru\nВсе запросы направлять сюда.', reply_markup=kb_client)
         await message.delete()
      except:
-         await message.answer(f'{message.from_user.full_name}, для работы с ботом необходимо перейти ')
-
+         await message.answer(f'{message.from_user.full_name}, для работы с ботом необходимо перейти https://t.me/cartridgeRolf_bot')
+         await message.delete()
 
 
 async def cart_list(message: types.Message):
@@ -37,6 +37,7 @@ async def CartList(message: types.Message):
 def register_handler_client(dp: Dispatcher):
     dp.register_message_handler(command_start, commands=['start', 'help'])
     dp.register_message_handler(cart_list, text='Список картриджей')
+    dp.register_message_handler(cart_list, commands=['list'])
     dp.register_message_handler(reset, text="сброс")
 
     dp.register_message_handler(stop, commands=['stop'])

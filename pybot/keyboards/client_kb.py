@@ -17,3 +17,11 @@ kb_exit.add(b5)
 kb = InlineKeyboardMarkup(row_width=2)
 inline_kb = InlineKeyboardButton(text="Список картриджей", callback_data='CartList')
 kb.add(inline_kb)
+
+kb1 = InlineKeyboardMarkup(row_width=2)
+inline_kb1 = InlineKeyboardButton(text = "Повторить", callback_data='rec')
+kb1.add(inline_kb1)
+
+kb2 = InlineKeyboardMarkup(row_width=2)
+inline_kb2 = InlineKeyboardButton(text = "Повторить", callback_data='rec1')
+kb2.add(inline_kb2)
