@@ -6,8 +6,8 @@ import os
 # -1001690773499
 storage = MemoryStorage()
 
-bot = Bot(token=os.getenv('TOKEN'))
-CHANNEL_ID = os.getenv('CHANNEL_ID')
+bot = Bot('5776400621:AAFlZH01YpqKvpoM5r-DxTGAZYLyFA_sXQU')
+CHANNEL_ID = ('-878294496')
 dp = Dispatcher(bot, storage=storage)
 print(bot)
-print(CHANNEL_ID)
+#print(CHANNEL_ID)

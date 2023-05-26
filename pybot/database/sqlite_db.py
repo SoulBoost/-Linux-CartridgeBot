@@ -100,7 +100,7 @@ async def sql_put(state, message):
 # список картриджей для пользователя
 async def sql_read(message):
     result = "Наименование - Количество:"
-    for ret in cur.execute("SELECT * FROM cartridge"):
+    for ret in cur.execute("SELECT * FROM 'cartridge'"):
         result += f"\n{ret[0]} - {ret[1]} шт."
     await bot.send_message(message.from_user.id, result)
 

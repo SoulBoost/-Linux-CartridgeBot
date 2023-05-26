@@ -19,7 +19,7 @@ lambda
 """
 
 from aiogram.utils import executor  # сам запуск
-from create_bot import dp
+from create_bot import dp, CHANNEL_ID
 from database import sqlite_db
 
 print('подключение к бд...')
